@@ -1,0 +1,44 @@
+services:
+  mogkoe:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      voicevox:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      VOICEVOX_URL: http://voicevox:50021
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - audio-cache:/app/cache
+
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+    restart: unless-stopped
+    expose:
+      - "50021"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:50021/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  audio-cache:
+  redis-data:
