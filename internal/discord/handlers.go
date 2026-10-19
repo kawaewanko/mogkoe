@@ -25,6 +25,8 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	}
 
 	switch i.ApplicationCommandData().Name {
+	case "help":
+		b.help(s, i)
 	case "join":
 		b.join(s, i)
 	case "leave":
@@ -50,6 +52,18 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	case "status":
 		b.status(s, i)
 	}
+}
+
+func (b *Bot) help(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	fields := []*discordgo.MessageEmbedField{
+		{Name: "/join・/leave", Value: "ボイスチャンネルへの参加・退出", Inline: false},
+		{Name: "/speak・/voice", Value: "標準話者・自動選定で文章を読み上げ", Inline: false},
+		{Name: "/channel・/channel-off", Value: "自動読み上げチャンネルの指定・解除", Inline: false},
+		{Name: "/speaker・/speaker-reset・/speakers", Value: "標準話者の設定・リセット・話者一覧の表示", Inline: false},
+		{Name: "/pause・/resume・/clear", Value: "読み上げの一時停止・再開・キュー消去", Inline: false},
+		{Name: "/status", Value: "BOT、音声エンジン、話者、キューの状態を表示", Inline: false},
+	}
+	b.replyEmbedFields(s, i, "📖 mogkoe ヘルプ", "利用できるスラッシュコマンドの一覧です。詳しい引数はDiscordの入力欄で確認できます。", colorInfo, fields, false)
 }
 
 func (b *Bot) onMessage(_ *discordgo.Session, message *discordgo.MessageCreate) {

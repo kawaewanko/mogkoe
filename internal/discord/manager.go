@@ -216,6 +216,7 @@ func commands() []*discordgo.ApplicationCommand {
 		}
 	}
 	return []*discordgo.ApplicationCommand{
+		{Name: "help", Description: "利用できるコマンドを表示"},
 		{Name: "join", Description: "あなたがいるボイスチャンネルへ参加"},
 		{Name: "leave", Description: "ボイスチャンネルから退出"},
 		{Name: "speak", Description: "標準話者で文章を読み上げ", Options: []*discordgo.ApplicationCommandOption{textOption("読み上げる文章（最大200文字）")}},
