@@ -1,18 +1,41 @@
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mogkoe:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
     restart: unless-stopped
-    env_file: .env
+    stop_grace_period: 30s
+    env_file:
+      - .env
+    environment:
+      VOICEVOX_URL: http://voicevox:50021
+      REDIS_URL: redis://redis:6379/0
+      CACHE_DIR: /app/cache
+      HOME: /tmp
     depends_on:
       voicevox:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      VOICEVOX_URL: http://voicevox:50021
-      REDIS_URL: redis://redis:6379/0
     volumes:
       - audio-cache:/app/cache
+    # The app only writes to its cache volume; all other rootfs paths are read-only.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    logging: *default-logging
 
   voicevox:
     image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
@@ -24,11 +47,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 30s
+    logging: *default-logging
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: ["redis-server", "--appendonly", "yes"]
     expose:
       - "6379"
     volumes:
@@ -38,6 +63,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 5s
+    logging: *default-logging
 
 volumes:
   audio-cache:

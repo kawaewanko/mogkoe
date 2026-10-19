@@ -318,12 +318,28 @@ Redisを復旧してから新しいメッセージを投稿してください。
 
 ## 💾 データとセキュリティ
 
-- `.env`、BOTトークン、Redisの認証情報をGitへ追加しないでください。
-- `audio-cache`には生成音声キャッシュが保存されます。
-- `redis-data`にはチャンネル設定、話者設定、Redisの永続データが保存されます。
+- `.env`、BOTトークン、Redisの認証情報をGitへ追加しないでください。`.env`はOS上でも読み取り権限を絞ってください（Linux/macOSでは `chmod 600 .env`）。
+- `audio-cache`には生成音声キャッシュが保存されます。コンテナ内ではUID/GID `10001:10001`で実行し、キャッシュディレクトリは所有者のみアクセス可能な権限で作成します。
+- `redis-data`にはチャンネル設定、話者設定、Redisの永続データが保存されます。通常の停止・更新では `docker compose down -v` を使わないでください。`-v`は永続データも削除します。
+- BOTコンテナは読み取り専用root filesystem、`cap_drop: ALL`、`no-new-privileges`を有効にし、書き込み先はキャッシュボリュームと一時領域に限定しています。ビルドツールは実行イメージに含めません。
+- このプロジェクトはOpus依存のため、ビルド時はCGOと`libopus-dev`、`libopusfile-dev`が必要です。実行時には共有ライブラリの`libopus0`、`libopusfile0`と`ffmpeg`を追加します。コンパイラや`-dev`パッケージは実行イメージに含めません。
 - DiscordのMessage Content Intentを使うため、サーバー利用者へ読み上げの運用方針を案内してください。
 - VOICEVOXおよび各キャラクターの利用規約・商用利用条件を確認してください。
 - Discord APIのレート制限を守って運用してください。
+
+### 既存のキャッシュボリュームを更新する場合
+
+以前のroot実行イメージで作成した`audio-cache`ボリュームは、root所有のままで書き込みに失敗することがあります。次のコマンドでキャッシュだけを修復できます。Redisの永続データは削除しません。
+
+```sh
+docker compose run --rm --no-deps --user 0 --cap-add CHOWN --entrypoint sh mogkoe -c 'chown -R 10001:10001 /app/cache && chmod 0700 /app/cache'
+```
+
+その後、通常どおり再ビルド・起動してください。
+
+```sh
+docker compose up -d --build
+```
 
 ## 🎨 ブランドアセット
 

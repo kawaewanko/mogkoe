@@ -122,7 +122,11 @@ func (e *Engine) readCache(path string) ([]byte, bool) {
 func (e *Engine) writeCache(path string, b []byte) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if err := os.MkdirAll(e.cache, 0755); err == nil {
-		_ = os.WriteFile(path, b, 0644)
+	if err := os.MkdirAll(e.cache, 0700); err != nil {
+		e.log.Warn("音声キャッシュのディレクトリを作成できません", "path", e.cache, "error", err)
+		return
+	}
+	if err := os.WriteFile(path, b, 0600); err != nil {
+		e.log.Warn("音声キャッシュを書き込めません", "path", path, "error", err)
 	}
 }

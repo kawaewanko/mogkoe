@@ -1,4 +1,11 @@
-cache
-*.zip
+# Secrets and local state
 .env
-**/.git
+cache/
+**/cache/
+
+# VCS and local build artifacts
+.git/
+**/.git/
+*.zip
+*.log
+coverage.out
